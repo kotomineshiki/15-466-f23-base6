@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
 
 	//keep track of which connection is controlling which player:
 	std::unordered_map< Connection *, Player * > connection_to_player;
+	std::unordered_map<Connection* , Coin*> connection_to_coin;
 	//keep track of game state:
 	Game game;
 
@@ -73,6 +74,7 @@ int main(int argc, char **argv) {
 
 					//create some player info for them:
 					connection_to_player.emplace(c, game.spawn_player());
+					connection_to_coin.emplace(c, game.spawn_coin());
 
 				} else if (evt == Connection::OnClose) {
 					//client disconnected:

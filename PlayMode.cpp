@@ -174,8 +174,25 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					col
 				);
 			}
+			char count[20]={'\0'};
+			_itoa_s(player.coinCount,count,10);
 
-			draw_text(player.position + glm::vec2(0.0f, -0.1f + Game::PlayerRadius), player.name, 0.09f);
+		//	std::string countstring(count);
+			std::string temp(player.name);
+			temp.append(1,' ');
+			temp.append(count);
+			draw_text(player.position + glm::vec2(0.0f, -0.1f + Game::PlayerRadius), temp, 0.09f);
+
+		}
+		for(auto const &coin:game.coins){
+			glm::u8vec4 col(255,255,255,0xff) ;//glm::u8vec4((uint8_t)1*255, (uint8_t)1*255, (uint8_t)1*255, 0xff);
+			for(uint32_t a=0;a<circle.size();++a){
+				lines.draw(
+					glm::vec3(coin.position+Game::PlayerRadius*circle[a],0.0f),
+					glm::vec3(coin.position+Game::PlayerRadius*circle[(a+1)%circle.size()],0.0f),
+					col
+				);
+			}
 		}
 	}
 	GL_ERRORS();

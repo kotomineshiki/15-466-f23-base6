@@ -1,10 +1,16 @@
-# (TODO: your game's title)
+# MultiplayerEatingCoin
 
-Author: (TODO: your name)
+Author: Yiquz
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: 
+Rule1: eat one coin to get one point.when you eat ,coin will respawn
+Rule2: if you hit other player, both of you will reduce 1 points.
 
-Networking: (TODO: How does your game implement client/server multiplayer? What messages are transmitted? Where in the code?)
+Networking: In server.cpp, I respawn coin everytime new player enter.
+In Game.cpp send_state_message, server is sending the data that need sync to clients
+Also, in  recv_state_message, client(Playmode) need to receive informations from server and use it for objects.
+
+Messages: Player velocity, coin count, position; Coin position.
 
 Screen Shot:
 
@@ -12,9 +18,8 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
-
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Move Around to eat Coin
+Hit other player to reduce their point if you have more points.
 
 This game was built with [NEST](NEST.md).
 

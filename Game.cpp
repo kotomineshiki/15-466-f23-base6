@@ -91,10 +91,18 @@ Player *Game::spawn_player() {
 		player.color.b = mt() / float(mt.max());
 	} while (player.color == glm::vec3(0.0f));
 	player.color = glm::normalize(player.color);
-
+	player.coinCount=1;
 	player.name = "Player " + std::to_string(next_player_number++);
 
 	return &player;
+}
+Coin * Game::spawn_coin(){
+	coins.emplace_back();
+	Coin & coin=coins.back();
+	coin.position.x=glm::mix(ArenaMin.x + 2.0f * PlayerRadius, ArenaMax.x - 2.0f * PlayerRadius, 0.4f + 0.2f * mt() / float(mt.max()));
+	coin.position.y=glm::mix(ArenaMin.y + 2.0f * PlayerRadius, ArenaMax.y - 2.0f * PlayerRadius, 0.4f + 0.2f * mt() / float(mt.max()));
+	std::cout<<"Coin Established"<<std::endl;
+	return &coin;
 }
 
 void Game::remove_player(Player *player) {
@@ -165,6 +173,10 @@ void Game::update(float elapsed) {
 			glm::vec2 delta_v12 = dir * glm::max(0.0f, -1.75f * glm::dot(dir, v12));
 			p2.velocity += 0.5f * delta_v12;
 			p1.velocity -= 0.5f * delta_v12;
+			p1.coinCount--;
+			p2.coinCount--;
+			if(p1.coinCount>100)p1.coinCount=0;
+			if(p2.coinCount>100)p2.coinCount=0;
 		}
 		//player/arena collisions:
 		if (p1.position.x < ArenaMin.x + PlayerRadius) {
@@ -183,6 +195,18 @@ void Game::update(float elapsed) {
 			p1.position.y = ArenaMax.y - PlayerRadius;
 			p1.velocity.y =-std::abs(p1.velocity.y);
 		}
+		//todo:player/coin collision;
+		for(auto& c1:coins){
+			glm::vec2 p1c1=c1.position-p1.position;
+			float len3=glm::length2(p1c1);
+			if(len3<=PlayerRadius){//the coin was eaten
+				p1.coinCount++;
+				//c1.position=glm::vec2(1000.0f,1000.0f);
+				c1.position.x=glm::mix(ArenaMin.x + 1.0f * PlayerRadius, ArenaMax.x - 1.0f * PlayerRadius, (float)rand()/RAND_MAX);
+				c1.position.y=glm::mix(ArenaMin.y + 1.0f * PlayerRadius, ArenaMax.y - 1.0f * PlayerRadius, (float)rand()/RAND_MAX);
+			}
+		}
+
 	}
 
 }
@@ -205,14 +229,21 @@ void Game::send_state_message(Connection *connection_, Player *connection_player
 		connection.send(player.position);
 		connection.send(player.velocity);
 		connection.send(player.color);
-	
+		connection.send(player.coinCount);
 		//NOTE: can't just 'send(name)' because player.name is not plain-old-data type.
 		//effectively: truncates player name to 255 chars
 		uint8_t len = uint8_t(std::min< size_t >(255, player.name.size()));
 		connection.send(len);
 		connection.send_buffer.insert(connection.send_buffer.end(), player.name.begin(), player.name.begin() + len);
 	};
+	auto send_coin=[&](Coin const& coin){
+		connection.send(coin.position);
+		connection.send(coin.velocity);
+		connection.send(coin.color);
 
+	//	uint8_t len=uint8_t(std::min<size_t>(255,player.name.size()));
+	//	connect.send(len);
+	};
 	//player count:
 	connection.send(uint8_t(players.size()));
 	if (connection_player) send_player(*connection_player);
@@ -221,7 +252,11 @@ void Game::send_state_message(Connection *connection_, Player *connection_player
 		send_player(player);
 	}
 
-	//compute the message size and patch into the message header:
+
+	connection.send(uint8_t(coins.size()));
+	for(auto const &coin:coins){
+		send_coin(coin);
+	}
 	uint32_t size = uint32_t(connection.send_buffer.size() - mark);
 	connection.send_buffer[mark-3] = uint8_t(size);
 	connection.send_buffer[mark-2] = uint8_t(size >> 8);
@@ -260,6 +295,7 @@ bool Game::recv_state_message(Connection *connection_) {
 		read(&player.position);
 		read(&player.velocity);
 		read(&player.color);
+		read(&player.coinCount);
 		uint8_t name_len;
 		read(&name_len);
 		//n.b. would probably be more efficient to directly copy from recv_buffer, but I think this is clearer:
@@ -269,6 +305,16 @@ bool Game::recv_state_message(Connection *connection_) {
 			read(&c);
 			player.name += c;
 		}
+	}
+	coins.clear();
+	uint8_t coin_count;
+	read(&coin_count);
+	for(uint8_t i=0;i<coin_count;++i){
+		coins.emplace_back();
+		Coin &coin=coins.back();
+		read(&coin.position);
+		read(&coin.velocity);
+		read(&coin.color);
 	}
 
 	if (at != size) throw std::runtime_error("Trailing data in state message.");

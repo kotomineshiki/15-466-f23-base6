@@ -43,14 +43,23 @@ struct Player {
 	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
 
 	glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+	uint8_t coinCount=1;
 	std::string name = "";
+};
+struct Coin{
+	glm::vec2 position = glm::vec2(0.0f, 0.0f);
+	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
+
+	glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
 };
 
 struct Game {
 	std::list< Player > players; //(using list so they can have stable addresses)
+	std::list<Coin> coins;
 	Player *spawn_player(); //add player the end of the players list (may also, e.g., play some spawn anim)
 	void remove_player(Player *); //remove player from game (may also, e.g., play some despawn anim)
-
+	Coin * spawn_coin();
+	
 	std::mt19937 mt; //used for spawning players
 	uint32_t next_player_number = 1; //used for naming players
 
